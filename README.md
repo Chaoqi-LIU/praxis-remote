@@ -19,13 +19,7 @@ caller.
 Install from PyPI:
 
 ```bash
-pip install praxis-remote
-```
-
-Install the current GitHub branch directly when you need unreleased changes:
-
-```bash
-pip install "praxis-remote @ git+https://github.com/Chaoqi-LIU/praxis-remote.git@main"
+pip install praxis-remote==0.1.0
 ```
 
 ## Observation Contract
