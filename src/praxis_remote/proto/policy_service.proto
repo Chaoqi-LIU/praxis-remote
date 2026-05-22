@@ -1,0 +1,115 @@
+// SPDX-FileCopyrightText: 2026 Chaoqi Liu
+//
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package praxis_remote;
+
+service PolicyService {
+  // Run policy inference: observation → action.
+  rpc Predict(PredictRequest) returns (PredictResponse);
+
+  // Reset policy state (action queues, obs history) between episodes.
+  rpc Reset(ResetRequest) returns (ResetResponse);
+
+  // Health/readiness check.
+  rpc HealthCheck(Empty) returns (HealthResponse);
+}
+
+enum DType {
+  DTYPE_UNSPECIFIED = 0;
+  DTYPE_FLOAT32 = 1;
+  DTYPE_FLOAT64 = 2;
+  DTYPE_INT32 = 3;
+  DTYPE_INT64 = 4;
+  DTYPE_UINT8 = 5;
+  DTYPE_BOOL = 6;
+}
+
+enum NullValue {
+  NULL_VALUE = 0;
+}
+
+message Tensor {
+  bytes data = 1;
+  repeated int64 shape = 2;
+  DType dtype = 3;
+}
+
+message NamedTensor {
+  string key = 1;
+  Tensor tensor = 2;
+}
+
+message StringField {
+  string key = 1;
+  string value = 2;
+}
+
+message Observation {
+  repeated NamedTensor tensors = 1;
+  repeated StringField strings = 2;
+  repeated ValueField scalars = 3;
+}
+
+message Value {
+  oneof kind {
+    NullValue null_value = 1;
+    bool bool_value = 2;
+    int64 int_value = 3;
+    double float_value = 4;
+    string string_value = 5;
+    ValueList list_value = 6;
+    ValueStruct struct_value = 7;
+  }
+}
+
+message ValueList {
+  repeated Value values = 1;
+}
+
+message ValueStruct {
+  map<string, Value> fields = 1;
+}
+
+message ValueField {
+  string key = 1;
+  Value value = 2;
+}
+
+message PredictRequest {
+  // One logical example per batch element. Each example carries the exact
+  // observation keys the policy expects.
+  repeated Observation observations = 1;
+
+  // Request-level predict_action kwargs, shared across the batch.
+  map<string, Value> policy_kwargs = 2;
+
+  // Optional per-observation rollout slots. Stateful policies can use these
+  // ids to keep vectorized environment state independent across lanes.
+  repeated string episode_ids = 3;
+}
+
+message PredictResponse {
+  // Policy output action tensor. Typical shapes are (action_dim,) or
+  // (batch_size, action_dim), matching local predict_action semantics.
+  Tensor action = 1;
+}
+
+message ResetRequest {
+  // Empty means reset all policy state. Non-empty means reset only these
+  // rollout slots.
+  repeated string episode_ids = 1;
+}
+
+message ResetResponse {
+  bool success = 1;
+}
+
+message Empty {}
+
+message HealthResponse {
+  bool ready = 1;
+  string model_info = 2;
+}
