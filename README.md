@@ -19,7 +19,7 @@ caller.
 Install from PyPI:
 
 ```bash
-pip install praxis-remote==0.1.0
+pip install praxis-remote==0.1.1
 ```
 
 ## Observation Contract
